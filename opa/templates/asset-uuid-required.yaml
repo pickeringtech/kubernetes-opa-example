@@ -19,8 +19,8 @@ spec:
           properties:
             enforcementMode:
               type: string
-              enum: ["loose", "strict"]
-              description: "Enforcement mode: loose (new deployments only) or strict (all deployments)"
+              enum: ["loose", "strict", "loose-warnings"]
+              description: "Enforcement mode: loose (new deployments only), strict (all deployments), or loose-warnings (warnings for updates)"
             exemptNamespaces:
               type: array
               items:
@@ -38,11 +38,11 @@ spec:
           # Check if namespace is exempt
           not is_exempt_namespace
 
-          # Check if deployment is centrally exempted
-          not is_centrally_exempted
-
           # Check if assetUuid label is missing
           not has_asset_uuid
+
+          # Check if deployment is centrally exempted
+          not is_centrally_exempted
 
           # Check enforcement mode and operation type
           should_enforce
@@ -55,12 +55,19 @@ spec:
         should_enforce {
           input.parameters.enforcementMode == "strict"
           # In strict mode, enforce on both CREATE and UPDATE operations
+          # No operation type restriction - block everything that's non-compliant
         }
 
         should_enforce {
           input.parameters.enforcementMode == "loose"
           # In loose mode, only enforce on CREATE operations (new deployments)
           input.review.operation == "CREATE"
+        }
+
+        should_enforce {
+          input.parameters.enforcementMode == "loose-warnings"
+          # In loose-warnings mode, generate warnings for UPDATE operations
+          input.review.operation == "UPDATE"
         }
 
         # Check if namespace is exempt
@@ -75,14 +82,14 @@ spec:
           count(asset_uuid) > 0
         }
 
+
+
         # Check if deployment is centrally exempted
         # Note: In a real implementation, this would fetch from S3
         # For demo purposes, we'll use a simple list of known exempted deployments
         is_centrally_exempted {
           deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
           exempted_deployments := {
-            "opa-loose-demo/test-non-compliant-app",
-            "opa-strict-demo/test-non-compliant-app",
             "monitoring/legacy-prometheus",
             "logging/fluentd-legacy"
           }

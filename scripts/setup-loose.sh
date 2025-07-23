@@ -70,10 +70,11 @@ echo ""
 echo "🚀 Creating existing deployment (before constraint activation)..."
 kubectl apply -f test-deployments/non-compliant-deployment.yaml -n opa-loose-demo
 
-# Now deploy the constraint
+# Now deploy the constraints
 echo ""
-echo "📋 Activating loose enforcement constraint..."
+echo "📋 Activating loose enforcement constraints..."
 kubectl apply -f opa/constraints/loose-enforcement.yaml
+kubectl apply -f opa/constraints/loose-enforcement-warnings.yaml
 
 echo ""
 echo "🎉 Loose Environment Setup Complete!"

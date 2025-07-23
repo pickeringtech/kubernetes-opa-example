@@ -1,17 +1,17 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
 kind: AssetUuidRequired
 metadata:
-  name: asset-uuid-loose-enforcement
+  name: asset-uuid-loose-warnings
   annotations:
-    description: "ACME Payments Inc. FinOps - Loose Enforcement for Rolling Deployment"
+    description: "ACME Payments Inc. FinOps - Loose Enforcement Warnings for Updates"
     organization: "ACME Payments Inc."
     policy-category: "finops-compliance"
-    enforcement-level: "loose"
-    rollout-strategy: "gradual-migration"
+    enforcement-level: "loose-warnings"
+    rollout-strategy: "update-warnings"
 spec:
-  enforcementAction: deny  # Block non-compliant CREATE operations
+  enforcementAction: warn  # Generate warnings for UPDATE operations
   parameters:
-    enforcementMode: "loose"
+    enforcementMode: "loose-warnings"  # Special mode for warnings only
     exemptNamespaces:
       - "kube-system"
       - "kube-public"

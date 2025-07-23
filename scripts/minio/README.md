@@ -1,21 +1,8 @@
 # ACME Payments Inc. - MinIO Exemption Management Scripts
 
-This directory contains scripts for managing and demonstrating the centralized exemption system using S3-compatible MinIO storage.
+This directory contains scripts for demonstrating the centralized exemption system using S3-compatible MinIO storage.
 
 ## 🎯 Demo Scripts
-
-### `demo-exemptions.sh`
-**The main demo script** - Run this for a comprehensive demonstration of the exemption management system.
-
-```bash
-./scripts/minio/demo-exemptions.sh
-```
-
-This script provides:
-- Complete overview of centralized exemption management
-- File format demonstrations
-- Real-world usage scenarios
-- Security and governance explanations
 
 ### `list-exemptions.sh`
 Browse all exemption files stored in MinIO S3-compatible storage.
@@ -29,38 +16,21 @@ Shows:
 - File listings for loose and strict enforcement
 - Storage usage summary
 
-### `read-exemption.sh`
-Read and analyze specific exemption files with detailed JSON structure analysis.
+### `read-exemptions.sh`
+Read specific exemption files and display their contents.
 
 ```bash
-./scripts/minio/read-exemption.sh <file-path>
+./scripts/minio/read-exemptions.sh <file-path>
 
 # Examples:
-./scripts/minio/read-exemption.sh loose-enforcement/exemptions.json
-./scripts/minio/read-exemption.sh strict-enforcement/exemptions.json
+./scripts/minio/read-exemptions.sh loose-enforcement/exemptions.json
+./scripts/minio/read-exemptions.sh strict-enforcement/exemptions.json
 ```
 
 Features:
-- Pretty-printed JSON content
-- Automatic structure analysis
-- Exemption category breakdown
-- Deployment-specific details
-
-### `upload-exemption.sh`
-Upload new exemption files to MinIO storage (FinOps team use only).
-
-```bash
-./scripts/minio/upload-exemption.sh <local-file> <s3-path>
-
-# Example:
-./scripts/minio/upload-exemption.sh new-exemptions.json loose-enforcement/exemptions.json
-```
-
-Includes:
-- JSON validation
-- Authorization checks
-- Audit trail logging
-- Upload verification
+- Clean JSON content display
+- Perfect for live demos
+- Shows professional exemption format
 
 ## 🏦 Enterprise Features Demonstrated
 
@@ -109,24 +79,19 @@ Includes:
 
 ## 🚀 Quick Start for Demo
 
-1. **Ensure MinIO is running:**
+1. **Run the main demo (includes MinIO demo):**
    ```bash
-   kubectl get pods -n minio-system
+   ./scripts/demo.sh
    ```
 
-2. **Run the comprehensive demo:**
-   ```bash
-   ./scripts/minio/demo-exemptions.sh
-   ```
-
-3. **Browse exemption files:**
+2. **Browse exemption files:**
    ```bash
    ./scripts/minio/list-exemptions.sh
    ```
 
-4. **Examine specific exemptions:**
+3. **Examine specific exemptions:**
    ```bash
-   ./scripts/minio/read-exemption.sh loose-enforcement/exemptions.json
+   ./scripts/minio/read-exemptions.sh loose-enforcement/exemptions.json
    ```
 
 ## 📞 ACME Payments Inc. Support
@@ -144,8 +109,8 @@ Includes:
 
 ## 🎭 Demo Tips
 
-- Use `demo-exemptions.sh` for the main presentation
-- Show file contents with `read-exemption.sh` to demonstrate structure
+- Use the main `./scripts/demo.sh` for presentations
+- Show file contents with `read-exemptions.sh` to demonstrate structure
 - Highlight the professional format and audit trails
 - Emphasize centralized control vs. self-exemption
 - Discuss real-world scenarios and governance benefits

@@ -1,30 +1,31 @@
 #!/bin/bash
 
-# Setup script for OPA Loose Enforcement Scenario
-# This script demonstrates gradual migration to asset UUID requirements
+# ACME Payments Inc. - Loose Environment Setup
+# Sets up loose enforcement mode for rolling deployment strategy
 
 set -e
 
-echo "🛡️ Setting up OPA Loose Enforcement Scenario"
-echo "=============================================="
+echo "🏦 ACME Payments Inc. - Loose Environment Setup"
+echo "==============================================="
+echo "Setting up loose enforcement mode for rolling deployment demonstration"
+echo ""
 
-# Check if kubectl is available
+# Check prerequisites
 if ! command -v kubectl &> /dev/null; then
     echo "❌ kubectl is not installed or not in PATH"
     exit 1
 fi
 
-# Check if cluster is accessible
 if ! kubectl cluster-info &> /dev/null; then
     echo "❌ Cannot connect to Kubernetes cluster"
-    echo "Please ensure your kubeconfig is set up correctly"
     exit 1
 fi
 
 echo "✅ Kubernetes cluster is accessible"
 
 # Install Gatekeeper if not already installed
-echo "📦 Checking for OPA Gatekeeper..."
+echo ""
+echo "📦 Checking OPA Gatekeeper..."
 if ! kubectl get namespace gatekeeper-system &> /dev/null; then
     echo "Installing OPA Gatekeeper..."
     kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.14/deploy/gatekeeper.yaml
@@ -36,45 +37,62 @@ else
     echo "✅ OPA Gatekeeper is already installed"
 fi
 
-# Apply the loose enforcement scenario
-echo "🚀 Deploying loose enforcement scenario..."
-kubectl apply -k scenarios/loose-enforcement/
-
-echo "⏳ Waiting for deployments to be ready..."
-kubectl wait --for=condition=Available deployment/nginx-loose-demo -n opa-loose-demo --timeout=120s
-kubectl wait --for=condition=Available deployment/nginx-existing-legacy -n opa-loose-demo --timeout=120s
-
-# Get service information
-echo "📋 Getting service information..."
-LOOSE_SERVICE=$(kubectl get svc nginx-loose-demo -n opa-loose-demo -o jsonpath='{.spec.ports[0].nodePort}')
-LEGACY_SERVICE=$(kubectl get svc nginx-existing-legacy -n opa-loose-demo -o jsonpath='{.spec.ports[0].nodePort}')
-
+# Deploy MinIO if not already deployed
 echo ""
-echo "🎉 Loose Enforcement Scenario Setup Complete!"
-echo "=============================================="
-echo ""
-echo "📊 Scenario Details:"
-echo "  • Policy Mode: LOOSE (warns on new deployments without assetUuid)"
-echo "  • Existing deployments: ALLOWED without assetUuid"
-echo "  • New deployments: REQUIRE assetUuid"
-echo ""
-echo "🌐 Access the demos:"
-if command -v minikube &> /dev/null && minikube status &> /dev/null; then
-    MINIKUBE_IP=$(minikube ip)
-    echo "  • Compliant Demo: http://${MINIKUBE_IP}:${LOOSE_SERVICE}"
-    echo "  • Legacy Demo: http://${MINIKUBE_IP}:${LEGACY_SERVICE}"
-elif command -v kind &> /dev/null; then
-    echo "  • Port-forward to access:"
-    echo "    kubectl port-forward svc/nginx-loose-demo -n opa-loose-demo 8080:80"
-    echo "    kubectl port-forward svc/nginx-existing-legacy -n opa-loose-demo 8081:80"
+echo "📦 Checking MinIO S3-compatible storage..."
+if ! kubectl get namespace minio-system &> /dev/null; then
+    echo "Deploying MinIO..."
+    kubectl apply -f infrastructure/minio/minio-deployment.yaml
+    kubectl wait --for=condition=Available deployment/minio -n minio-system --timeout=300s
+    
+    echo "Setting up exemption data..."
+    kubectl apply -f infrastructure/minio/minio-setup-job.yaml
+    kubectl wait --for=condition=Complete job/minio-setup -n minio-system --timeout=300s
 else
-    echo "  • NodePort services created on ports ${LOOSE_SERVICE} and ${LEGACY_SERVICE}"
+    echo "✅ MinIO is already deployed"
 fi
+
+# Create loose demo namespace
 echo ""
-echo "🧪 Test the policy:"
-echo "  • Try deploying without assetUuid: kubectl apply -f test-deployments/non-compliant-deployment.yaml"
-echo "  • Check constraint status: kubectl get assetuuidrequired -A"
+echo "🏗️  Setting up loose demo namespace..."
+kubectl create namespace opa-loose-demo --dry-run=client -o yaml | kubectl apply -f -
+
+# Deploy loose constraint template
 echo ""
-echo "📚 View logs:"
-echo "  • Gatekeeper logs: kubectl logs -l control-plane=controller-manager -n gatekeeper-system"
-echo "  • Constraint violations: kubectl get events --field-selector reason=ConstraintViolation -A"
+echo "📋 Deploying loose enforcement constraint template..."
+kubectl apply -f scenarios/loose-enforcement/opa/simple-constraint-template.yaml
+
+echo "⏳ Waiting for constraint template to be established..."
+kubectl wait --for=condition=Established crd/assetuuidrequiredsimple.constraints.gatekeeper.sh --timeout=60s
+
+# Create an existing non-compliant deployment (before constraint is active)
+echo ""
+echo "🚀 Creating existing deployment (before constraint activation)..."
+kubectl apply -f test-deployments/non-compliant-deployment.yaml -n opa-loose-demo
+
+# Now deploy the constraint
+echo ""
+echo "📋 Activating loose enforcement constraint..."
+kubectl apply -f scenarios/loose-enforcement/opa/simple-constraint.yaml
+
+echo ""
+echo "🎉 Loose Environment Setup Complete!"
+echo "===================================="
+echo ""
+echo "📊 Environment Status:"
+echo "• ✅ OPA Gatekeeper: Running"
+echo "• ✅ MinIO S3 storage: Running with exemption data"
+echo "• ✅ Loose constraint: Active in opa-loose-demo namespace"
+echo "• ✅ Existing deployment: test-non-compliant-app (can be updated)"
+echo ""
+echo "🎯 Loose Mode Behavior:"
+echo "• ✅ Allows UPDATES to existing deployments (even if non-compliant)"
+echo "• ❌ Blocks CREATE of new deployments that are non-compliant"
+echo ""
+echo "🎭 Ready for demo! Use:"
+echo "  ./scripts/push-deployment.sh compliant loose"
+echo "  ./scripts/push-deployment.sh non-compliant loose"
+echo ""
+echo "📁 View exemptions:"
+echo "  ./scripts/minio/list-exemptions.sh"
+echo "  ./scripts/minio/read-exemptions.sh loose-enforcement/exemptions.json"

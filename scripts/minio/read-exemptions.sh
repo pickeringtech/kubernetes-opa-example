@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Simple MinIO file reader for demo purposes
+# ACME Payments Inc. - Read Exemptions from S3 Storage
 
 FILE_PATH="${1:-loose-enforcement/exemptions.json}"
 
-echo "🏦 ACME Payments Inc. - Reading Exemption File"
-echo "=============================================="
-echo "File: $FILE_PATH"
+echo "🏦 ACME Payments Inc. - Read Exemptions"
+echo "======================================="
+echo "Reading exemption file: $FILE_PATH"
 echo ""
 
 # Use the same approach we tested earlier

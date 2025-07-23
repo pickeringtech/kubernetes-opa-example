@@ -1,30 +1,31 @@
 #!/bin/bash
 
-# Setup script for OPA Strict Enforcement Scenario
-# This script demonstrates zero-tolerance asset UUID requirements
+# ACME Payments Inc. - Strict Environment Setup
+# Sets up strict enforcement mode for full compliance
 
 set -e
 
-echo "🔒 Setting up OPA Strict Enforcement Scenario"
-echo "=============================================="
+echo "🏦 ACME Payments Inc. - Strict Environment Setup"
+echo "================================================"
+echo "Setting up strict enforcement mode for full compliance demonstration"
+echo ""
 
-# Check if kubectl is available
+# Check prerequisites
 if ! command -v kubectl &> /dev/null; then
     echo "❌ kubectl is not installed or not in PATH"
     exit 1
 fi
 
-# Check if cluster is accessible
 if ! kubectl cluster-info &> /dev/null; then
     echo "❌ Cannot connect to Kubernetes cluster"
-    echo "Please ensure your kubeconfig is set up correctly"
     exit 1
 fi
 
 echo "✅ Kubernetes cluster is accessible"
 
 # Install Gatekeeper if not already installed
-echo "📦 Checking for OPA Gatekeeper..."
+echo ""
+echo "📦 Checking OPA Gatekeeper..."
 if ! kubectl get namespace gatekeeper-system &> /dev/null; then
     echo "Installing OPA Gatekeeper..."
     kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.14/deploy/gatekeeper.yaml
@@ -36,45 +37,62 @@ else
     echo "✅ OPA Gatekeeper is already installed"
 fi
 
-# Apply the strict enforcement scenario
-echo "🚀 Deploying strict enforcement scenario..."
-kubectl apply -k scenarios/strict-enforcement/
-
-echo "⏳ Waiting for deployments to be ready..."
-kubectl wait --for=condition=Available deployment/nginx-strict-demo -n opa-strict-demo --timeout=120s
-
-# Get service information
-echo "📋 Getting service information..."
-STRICT_SERVICE=$(kubectl get svc nginx-strict-demo -n opa-strict-demo -o jsonpath='{.spec.ports[0].nodePort}')
-
+# Deploy MinIO if not already deployed
 echo ""
-echo "🎉 Strict Enforcement Scenario Setup Complete!"
-echo "=============================================="
-echo ""
-echo "📊 Scenario Details:"
-echo "  • Policy Mode: STRICT (denies ALL deployments without assetUuid)"
-echo "  • Existing deployments: MUST have assetUuid"
-echo "  • New deployments: MUST have assetUuid"
-echo "  • Enforcement Action: DENY (blocks non-compliant deployments)"
-echo ""
-echo "🌐 Access the demo:"
-if command -v minikube &> /dev/null && minikube status &> /dev/null; then
-    MINIKUBE_IP=$(minikube ip)
-    echo "  • Strict Demo: http://${MINIKUBE_IP}:${STRICT_SERVICE}"
-elif command -v kind &> /dev/null; then
-    echo "  • Port-forward to access:"
-    echo "    kubectl port-forward svc/nginx-strict-demo -n opa-strict-demo 8080:80"
+echo "📦 Checking MinIO S3-compatible storage..."
+if ! kubectl get namespace minio-system &> /dev/null; then
+    echo "Deploying MinIO..."
+    kubectl apply -f infrastructure/minio/minio-deployment.yaml
+    kubectl wait --for=condition=Available deployment/minio -n minio-system --timeout=300s
+    
+    echo "Setting up exemption data..."
+    kubectl apply -f infrastructure/minio/minio-setup-job.yaml
+    kubectl wait --for=condition=Complete job/minio-setup -n minio-system --timeout=300s
 else
-    echo "  • NodePort service created on port ${STRICT_SERVICE}"
+    echo "✅ MinIO is already deployed"
 fi
+
+# Create strict demo namespace
 echo ""
-echo "🧪 Test the policy:"
-echo "  • Try deploying without assetUuid (will be REJECTED):"
-echo "    kubectl create deployment test-fail --image=nginx -n opa-strict-demo"
-echo "  • Check constraint status: kubectl get assetuuidrequired -A"
+echo "🏗️  Setting up strict demo namespace..."
+kubectl create namespace opa-strict-demo --dry-run=client -o yaml | kubectl apply -f -
+
+# Deploy strict constraint template
 echo ""
-echo "⚠️  WARNING: This policy will BLOCK any deployment without assetUuid!"
+echo "📋 Deploying strict enforcement constraint template..."
+kubectl apply -f scenarios/strict-enforcement/opa/simple-constraint-template.yaml
+
+echo "⏳ Waiting for constraint template to be established..."
+kubectl wait --for=condition=Established crd/assetuuidrequiredstrictsimple.constraints.gatekeeper.sh --timeout=60s
+
+# Create an existing non-compliant deployment (before constraint is active)
 echo ""
-echo "📚 View logs:"
-echo "  • Gatekeeper logs: kubectl logs -l control-plane=controller-manager -n gatekeeper-system"
-echo "  • Constraint violations: kubectl get events --field-selector reason=ConstraintViolation -A"
+echo "🚀 Creating existing deployment (before constraint activation)..."
+kubectl apply -f test-deployments/non-compliant-deployment.yaml -n opa-strict-demo
+
+# Now deploy the constraint
+echo ""
+echo "📋 Activating strict enforcement constraint..."
+kubectl apply -f scenarios/strict-enforcement/opa/simple-constraint.yaml
+
+echo ""
+echo "🎉 Strict Environment Setup Complete!"
+echo "====================================="
+echo ""
+echo "📊 Environment Status:"
+echo "• ✅ OPA Gatekeeper: Running"
+echo "• ✅ MinIO S3 storage: Running with exemption data"
+echo "• ✅ Strict constraint: Active in opa-strict-demo namespace"
+echo "• ✅ Existing deployment: test-non-compliant-app (cannot be updated)"
+echo ""
+echo "🎯 Strict Mode Behavior:"
+echo "• ❌ Blocks CREATE of new deployments that are non-compliant"
+echo "• ❌ Blocks UPDATE of existing deployments that are non-compliant"
+echo ""
+echo "🎭 Ready for demo! Use:"
+echo "  ./scripts/push-deployment.sh compliant strict"
+echo "  ./scripts/push-deployment.sh non-compliant strict"
+echo ""
+echo "📁 View exemptions:"
+echo "  ./scripts/minio/list-exemptions.sh"
+echo "  ./scripts/minio/read-exemptions.sh strict-enforcement/exemptions.json"

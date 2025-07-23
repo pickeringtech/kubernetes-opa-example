@@ -63,6 +63,14 @@ data:
           "cost_impact": "low",
           "review_date": "2025-03-15",
           "ticket": "PLAT-1235"
+        },
+        "opa-loose-demo/test-non-compliant-app": {
+          "reason": "Demo deployment for exemption testing - can be updated for demonstration",
+          "approved_by": "demo-team@acmepayments.com",
+          "approval_date": "2025-01-23",
+          "cost_impact": "none",
+          "review_date": "2025-02-23",
+          "ticket": "DEMO-1001"
         }
       },
       "time_based_exemptions": {
@@ -114,6 +122,15 @@ data:
           "review_date": "2025-04-15",
           "ticket": "SEC-9999",
           "justification": "Critical infrastructure component for payment processing monitoring"
+        },
+        "opa-strict-demo/test-non-compliant-app": {
+          "reason": "Demo deployment for exemption testing - strict mode demonstration",
+          "approved_by": "demo-team@acmepayments.com",
+          "approval_date": "2025-01-23",
+          "cost_impact": "none",
+          "review_date": "2025-02-23",
+          "ticket": "DEMO-1002",
+          "justification": "Required for demonstrating exemption functionality in strict mode"
         }
       },
       "time_based_exemptions": {

@@ -34,16 +34,19 @@ spec:
         violation[{"msg": msg}] {
           # Only apply to Deployment resources
           input.review.kind.kind == "Deployment"
-          
+
           # Check if namespace is exempt
           not is_exempt_namespace
-          
+
+          # Check if deployment is centrally exempted
+          not is_centrally_exempted
+
           # Check if assetUuid label is missing
           not has_asset_uuid
-          
+
           # Check enforcement mode and operation type
           should_enforce
-          
+
           # Generate appropriate message based on enforcement mode
           msg := generate_violation_message
         }
@@ -70,6 +73,20 @@ spec:
           asset_uuid := input.review.object.metadata.labels.assetUuid
           asset_uuid != ""
           count(asset_uuid) > 0
+        }
+
+        # Check if deployment is centrally exempted
+        # Note: In a real implementation, this would fetch from S3
+        # For demo purposes, we'll use a simple list of known exempted deployments
+        is_centrally_exempted {
+          deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+          exempted_deployments := {
+            "opa-loose-demo/test-non-compliant-app",
+            "opa-strict-demo/test-non-compliant-app",
+            "monitoring/legacy-prometheus",
+            "logging/fluentd-legacy"
+          }
+          exempted_deployments[deployment_key]
         }
 
         # Generate violation message based on enforcement mode

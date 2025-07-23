@@ -28,6 +28,15 @@ Sets up strict enforcement mode for full compliance.
 
 Test different deployment scenarios in each mode.
 
+### 4. Update Existing Deployments
+```bash
+./scripts/update-deployment.sh scale loose
+./scripts/update-deployment.sh image strict
+./scripts/update-deployment.sh annotation loose
+```
+
+Test updates to existing non-compliant deployments.
+
 ## 📁 Directory Structure
 
 ```
@@ -35,6 +44,7 @@ scripts/
 ├── setup-loose.sh        # Setup loose enforcement environment
 ├── setup-strict.sh       # Setup strict enforcement environment
 ├── push-deployment.sh    # Test deployments (compliant/non-compliant)
+├── update-deployment.sh  # Test updates to existing deployments
 └── minio/                # MinIO S3 storage demos
     ├── list-exemptions.sh # Browse exemption storage
     ├── read-exemptions.sh # Read exemption files
@@ -45,9 +55,11 @@ scripts/
 
 1. **Setup Loose**: `./scripts/setup-loose.sh`
 2. **Demo Loose**: `./scripts/push-deployment.sh non-compliant loose`
-3. **Setup Strict**: `./scripts/setup-strict.sh`
-4. **Demo Strict**: `./scripts/push-deployment.sh non-compliant strict`
-5. **Show Exemptions**: `./scripts/minio/read-exemptions.sh loose-enforcement/exemptions.json`
+3. **Update Loose**: `./scripts/update-deployment.sh scale loose` (should succeed)
+4. **Setup Strict**: `./scripts/setup-strict.sh`
+5. **Demo Strict**: `./scripts/push-deployment.sh non-compliant strict`
+6. **Update Strict**: `./scripts/update-deployment.sh scale strict` (should fail)
+7. **Show Exemptions**: `./scripts/minio/read-exemptions.sh loose-enforcement/exemptions.json`
 
 ## 🏦 Enterprise Features Demonstrated
 

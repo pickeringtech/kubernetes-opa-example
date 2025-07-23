@@ -9,7 +9,6 @@ namespace: opa-loose-demo
 resources:
   - namespace.yaml
   - base/
-  - opa/
   - overlays/existing-deployment/
 
 labels:

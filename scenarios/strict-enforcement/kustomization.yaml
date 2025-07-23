@@ -9,7 +9,6 @@ namespace: opa-strict-demo
 resources:
   - namespace.yaml
   - base/
-  - opa/
 
 labels:
   - pairs:

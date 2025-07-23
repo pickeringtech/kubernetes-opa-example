@@ -1,7 +1,0 @@
-# This file is a placeholder for Gatekeeper installation
-# In practice, you would install Gatekeeper using:
-# kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.14/deploy/gatekeeper.yaml
-
-# Note: The actual Gatekeeper installation should be done via the official manifests
-# or Helm chart for production use. This file is kept for reference only.
-# The setup scripts will install Gatekeeper automatically.

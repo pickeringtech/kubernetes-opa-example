@@ -26,9 +26,9 @@ This project demonstrates two scenarios for enforcing asset UUID requirements in
 ├── opa/                       # Shared OPA Gatekeeper implementation
 │   ├── templates/             # Unified constraint templates
 │   └── constraints/           # Mode-specific constraint configurations
-├── scenarios/                 # Demo scenario configurations
-│   ├── loose-enforcement/     # Gradual rollout scenario
-│   └── strict-enforcement/    # Full compliance scenario
+├── scenarios/                 # Demo application configurations
+│   ├── loose-enforcement/     # Sample apps for loose mode demo
+│   └── strict-enforcement/    # Sample apps for strict mode demo
 ├── test-deployments/          # Sample deployments for testing
 ├── scripts/                   # Demo and setup scripts
 └── infrastructure/            # Supporting infrastructure (MinIO, etc.)

@@ -1,0 +1,30 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: AssetUuidRequired
+metadata:
+  name: asset-uuid-loose-enforcement
+  annotations:
+    description: "ACME Payments Inc. FinOps - Loose Enforcement for Rolling Deployment"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    enforcement-level: "loose"
+    rollout-strategy: "gradual-migration"
+spec:
+  enforcementAction: deny  # Block non-compliant deployments
+  parameters:
+    enforcementMode: "loose"
+    exemptNamespaces:
+      - "kube-system"
+      - "kube-public"
+      - "kube-node-lease"
+      - "gatekeeper-system"
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    namespaces:
+      - "opa-loose-demo"
+    excludedNamespaces:
+      - "kube-system"
+      - "kube-public" 
+      - "kube-node-lease"
+      - "gatekeeper-system"

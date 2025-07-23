@@ -1,0 +1,30 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: AssetUuidRequired
+metadata:
+  name: asset-uuid-strict-enforcement
+  annotations:
+    description: "ACME Payments Inc. FinOps - Strict Enforcement for Full Compliance"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    enforcement-level: "strict"
+    rollout-strategy: "full-compliance"
+spec:
+  enforcementAction: deny  # Block non-compliant deployments
+  parameters:
+    enforcementMode: "strict"
+    exemptNamespaces:
+      - "kube-system"
+      - "kube-public"
+      - "kube-node-lease"
+      - "gatekeeper-system"
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    namespaces:
+      - "opa-strict-demo"
+    excludedNamespaces:
+      - "kube-system"
+      - "kube-public" 
+      - "kube-node-lease"
+      - "gatekeeper-system"

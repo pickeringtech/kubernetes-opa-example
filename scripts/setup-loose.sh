@@ -57,13 +57,13 @@ echo ""
 echo "🏗️  Setting up loose demo namespace..."
 kubectl create namespace opa-loose-demo --dry-run=client -o yaml | kubectl apply -f -
 
-# Deploy loose constraint template
+# Deploy shared constraint template
 echo ""
-echo "📋 Deploying loose enforcement constraint template..."
-kubectl apply -f scenarios/loose-enforcement/opa/simple-constraint-template.yaml
+echo "📋 Deploying shared OPA constraint template..."
+kubectl apply -f opa/templates/asset-uuid-required.yaml
 
 echo "⏳ Waiting for constraint template to be established..."
-kubectl wait --for=condition=Established crd/assetuuidrequiredsimple.constraints.gatekeeper.sh --timeout=60s
+kubectl wait --for=condition=Established crd/assetuuidrequired.constraints.gatekeeper.sh --timeout=60s
 
 # Create an existing non-compliant deployment (before constraint is active)
 echo ""
@@ -73,7 +73,7 @@ kubectl apply -f test-deployments/non-compliant-deployment.yaml -n opa-loose-dem
 # Now deploy the constraint
 echo ""
 echo "📋 Activating loose enforcement constraint..."
-kubectl apply -f scenarios/loose-enforcement/opa/simple-constraint.yaml
+kubectl apply -f opa/constraints/loose-enforcement.yaml
 
 echo ""
 echo "🎉 Loose Environment Setup Complete!"
@@ -82,6 +82,7 @@ echo ""
 echo "📊 Environment Status:"
 echo "• ✅ OPA Gatekeeper: Running"
 echo "• ✅ MinIO S3 storage: Running with exemption data"
+echo "• ✅ Shared OPA template: Deployed (asset-uuid-required)"
 echo "• ✅ Loose constraint: Active in opa-loose-demo namespace"
 echo "• ✅ Existing deployment: test-non-compliant-app (can be updated)"
 echo ""

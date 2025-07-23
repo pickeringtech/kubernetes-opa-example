@@ -46,12 +46,12 @@ fi
 # Set namespace based on mode
 if [ "$MODE" = "loose" ]; then
     NAMESPACE="opa-loose-demo"
-    CONSTRAINT_NAME="deployment-asset-uuid-simple"
-    CONSTRAINT_TYPE="assetuuidrequiredsimple"
+    CONSTRAINT_NAME="asset-uuid-loose-enforcement"
+    CONSTRAINT_TYPE="assetuuidrequired"
 else
     NAMESPACE="opa-strict-demo"
-    CONSTRAINT_NAME="deployment-asset-uuid-strict-simple"
-    CONSTRAINT_TYPE="assetuuidrequiredstrictsimple"
+    CONSTRAINT_NAME="asset-uuid-strict-enforcement"
+    CONSTRAINT_TYPE="assetuuidrequired"
 fi
 
 echo "🏦 ACME Payments Inc. - Push Deployment Demo"

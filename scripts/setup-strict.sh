@@ -57,13 +57,13 @@ echo ""
 echo "🏗️  Setting up strict demo namespace..."
 kubectl create namespace opa-strict-demo --dry-run=client -o yaml | kubectl apply -f -
 
-# Deploy strict constraint template
+# Deploy shared constraint template
 echo ""
-echo "📋 Deploying strict enforcement constraint template..."
-kubectl apply -f scenarios/strict-enforcement/opa/simple-constraint-template.yaml
+echo "📋 Deploying shared OPA constraint template..."
+kubectl apply -f opa/templates/asset-uuid-required.yaml
 
 echo "⏳ Waiting for constraint template to be established..."
-kubectl wait --for=condition=Established crd/assetuuidrequiredstrictsimple.constraints.gatekeeper.sh --timeout=60s
+kubectl wait --for=condition=Established crd/assetuuidrequired.constraints.gatekeeper.sh --timeout=60s
 
 # Create an existing non-compliant deployment (before constraint is active)
 echo ""
@@ -73,7 +73,7 @@ kubectl apply -f test-deployments/non-compliant-deployment.yaml -n opa-strict-de
 # Now deploy the constraint
 echo ""
 echo "📋 Activating strict enforcement constraint..."
-kubectl apply -f scenarios/strict-enforcement/opa/simple-constraint.yaml
+kubectl apply -f opa/constraints/strict-enforcement.yaml
 
 echo ""
 echo "🎉 Strict Environment Setup Complete!"
@@ -82,6 +82,7 @@ echo ""
 echo "📊 Environment Status:"
 echo "• ✅ OPA Gatekeeper: Running"
 echo "• ✅ MinIO S3 storage: Running with exemption data"
+echo "• ✅ Shared OPA template: Deployed (asset-uuid-required)"
 echo "• ✅ Strict constraint: Active in opa-strict-demo namespace"
 echo "• ✅ Existing deployment: test-non-compliant-app (cannot be updated)"
 echo ""

@@ -20,6 +20,31 @@ This project demonstrates two scenarios for enforcing asset UUID requirements in
   - No exceptions for existing deployments
   - Demonstrates full policy compliance
 
+## 📁 Project Structure
+
+```
+├── opa/                       # Shared OPA Gatekeeper implementation
+│   ├── templates/             # Unified constraint templates
+│   └── constraints/           # Mode-specific constraint configurations
+├── scenarios/                 # Demo scenario configurations
+│   ├── loose-enforcement/     # Gradual rollout scenario
+│   └── strict-enforcement/    # Full compliance scenario
+├── test-deployments/          # Sample deployments for testing
+├── scripts/                   # Demo and setup scripts
+└── infrastructure/            # Supporting infrastructure (MinIO, etc.)
+```
+
+## 🔧 Shared OPA Implementation
+
+The `opa/` directory contains a unified OPA Gatekeeper implementation that works across both scenarios:
+
+- **Single Policy Logic**: One Rego policy handles both loose and strict modes
+- **Configuration-Driven**: Behavior changes based on `enforcementMode` parameter
+- **Consistent Messaging**: Professional ACME Payments Inc. violation messages
+- **Maintainable**: Single source of truth for policy logic
+
+This demonstrates enterprise-grade policy management where the same logic works regardless of deployment scenario.
+
 ## Quick Start
 
 ### Prerequisites
@@ -37,9 +62,11 @@ This project demonstrates two scenarios for enforcing asset UUID requirements in
 ./scripts/setup-strict.sh
 ```
 
-### Test Policies
+### Test Deployments
 ```bash
-./scripts/test-policies.sh
+./scripts/push-deployment.sh compliant loose
+./scripts/push-deployment.sh non-compliant loose
+./scripts/push-deployment.sh non-compliant strict
 ```
 
 ### Validate Configurations

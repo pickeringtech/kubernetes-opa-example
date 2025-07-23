@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opa-exemptions
+  namespace: gatekeeper-system
+  annotations:
+    description: "Centralized exemption management for OPA policies"
+    managed-by: "platform-team"
+    last-updated: "2025-01-23"
+data:
+  # Permanent exemptions - deployments that are permanently exempt from asset UUID requirements
+  # Format: "namespace/deployment-name": "reason for exemption"
+  permanent_exemptions: |
+    {
+      "monitoring/legacy-prometheus": "Legacy monitoring system - migration planned for Q2 2025",
+      "logging/fluentd-legacy": "Critical logging infrastructure - requires careful migration planning"
+    }
+  
+  # Time-based exemptions - deployments exempt until a specific date/time
+  # Format: "namespace/deployment-name": "RFC3339 timestamp"
+  time_based_exemptions: |
+    {
+      "development/test-app": "2025-02-15T10:00:00Z",
+      "staging/migration-app": "2025-01-31T23:59:59Z"
+    }
+  
+  # Existing deployments (loose mode only) - deployments that existed before policy enforcement
+  # Format: "namespace/deployment-name": "true"
+  existing_deployments: |
+    {
+      "default/nginx-existing-legacy": "true",
+      "production/legacy-api": "true",
+      "production/old-frontend": "true"
+    }
+  
+  # Metadata about exemptions for auditing and tracking
+  exemption_metadata: |
+    {
+      "monitoring/legacy-prometheus": {
+        "approved_by": "platform-team",
+        "approval_date": "2025-01-15",
+        "review_date": "2025-04-15",
+        "ticket": "PLAT-1234"
+      },
+      "logging/fluentd-legacy": {
+        "approved_by": "platform-team", 
+        "approval_date": "2025-01-15",
+        "review_date": "2025-03-15",
+        "ticket": "PLAT-1235"
+      },
+      "development/test-app": {
+        "approved_by": "dev-team-lead",
+        "approval_date": "2025-01-20",
+        "reason": "Temporary exemption for testing new deployment pipeline",
+        "ticket": "DEV-5678"
+      }
+    }

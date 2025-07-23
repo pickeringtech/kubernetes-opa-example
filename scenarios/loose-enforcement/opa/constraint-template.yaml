@@ -25,6 +25,16 @@ spec:
               items:
                 type: string
               description: "Namespaces to exempt from this policy"
+            exemptionConfigMap:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: "Name of the ConfigMap containing exemption data"
+                namespace:
+                  type: string
+                  description: "Namespace of the ConfigMap containing exemption data"
+              description: "ConfigMap reference for centralized exemption management"
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
@@ -33,22 +43,19 @@ spec:
         violation[{"msg": msg}] {
           # Only apply to Deployment resources
           input.review.kind.kind == "Deployment"
-          
+
           # Check if namespace is exempt
           not is_exempt_namespace
-          
-          # Check if resource is excluded by annotation
-          not is_excluded_by_annotation
-          
-          # Check if resource is excluded by time-based annotation
-          not is_excluded_by_time
-          
+
+          # Check if resource is centrally exempted
+          not is_centrally_exempted
+
           # Check enforcement mode
           should_enforce
-          
+
           # Check if assetUuid label is missing
           not has_asset_uuid
-          
+
           msg := sprintf("Deployment '%s' in namespace '%s' must have an 'assetUuid' label", [
             input.review.object.metadata.name,
             input.review.object.metadata.namespace
@@ -60,16 +67,29 @@ spec:
           input.parameters.exemptNamespaces[_] == input.review.object.metadata.namespace
         }
 
-        # Check if resource is excluded by annotation
-        is_excluded_by_annotation {
-          input.review.object.metadata.annotations["opa.example.com/exclude"] == "true"
+        # Check if resource is centrally exempted
+        is_centrally_exempted {
+          # Check for permanent exemptions
+          exemption_data := data.inventory.cluster["v1"]["ConfigMap"][input.parameters.exemptionConfigMap.namespace][input.parameters.exemptionConfigMap.name].data
+          deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+          exemption_data.permanent_exemptions[deployment_key]
         }
 
-        # Check if resource is excluded by time-based annotation
-        is_excluded_by_time {
-          exclude_until := input.review.object.metadata.annotations["opa.example.com/exclude-until"]
+        is_centrally_exempted {
+          # Check for time-based exemptions
+          exemption_data := data.inventory.cluster["v1"]["ConfigMap"][input.parameters.exemptionConfigMap.namespace][input.parameters.exemptionConfigMap.name].data
+          deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+          exclude_until := exemption_data.time_based_exemptions[deployment_key]
           exclude_until != ""
           time.parse_rfc3339_ns(exclude_until) > time.now_ns()
+        }
+
+        is_centrally_exempted {
+          # Check for existing deployment exemptions (loose mode only)
+          input.parameters.enforcementMode == "loose"
+          exemption_data := data.inventory.cluster["v1"]["ConfigMap"][input.parameters.exemptionConfigMap.namespace][input.parameters.exemptionConfigMap.name].data
+          deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
+          exemption_data.existing_deployments[deployment_key] == "true"
         }
 
         # Determine if we should enforce based on mode
@@ -80,8 +100,7 @@ spec:
         should_enforce {
           input.parameters.enforcementMode == "loose"
           # In loose mode, only enforce on new deployments
-          # We consider a deployment "new" if it doesn't have the exclude annotation
-          not input.review.object.metadata.annotations["opa.example.com/existing"]
+          # New deployments are those not listed in the existing_deployments exemption list
         }
 
         # Check if assetUuid label exists and is not empty

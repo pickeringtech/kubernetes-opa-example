@@ -116,22 +116,37 @@ echo ""
 echo "📈 Audit Information:"
 echo "===================="
 echo "• Violations are automatically tracked by OPA Gatekeeper"
-echo "• Warnings indicate policy violations that were allowed"
+echo "• Warnings from admission webhooks are logged but not always stored in constraint status"
 echo "• All events are logged for compliance and audit purposes"
 echo "• Violation counts help track compliance progress"
 echo ""
 
 if [ "$MODE" = "loose" ]; then
     echo "🎯 Loose Mode Behavior:"
-    echo "• CREATE operations: Blocked if non-compliant (violations)"
-    echo "• UPDATE operations: Allowed but generate warnings"
+    echo "• CREATE operations: Blocked if non-compliant (violations shown above)"
+    echo "• UPDATE operations: Allowed but generate warnings (logged in webhook logs)"
     echo "• Warnings help track technical debt during migration"
+    echo ""
+    echo "📋 Current Non-Compliant Deployments in Loose Mode:"
+    kubectl get deployments -n opa-loose-demo -o custom-columns="NAME:.metadata.name,ASSET_UUID:.metadata.labels.assetUuid,COMPLIANT:.metadata.labels.assetUuid" | sed 's/<none>/❌ MISSING/g' | sed 's/asset-/✅ /g'
 else
     echo "🎯 Strict Mode Behavior:"
-    echo "• CREATE operations: Blocked if non-compliant (violations)"
-    echo "• UPDATE operations: Blocked if non-compliant (violations)"
+    echo "• CREATE operations: Blocked if non-compliant (violations shown above)"
+    echo "• UPDATE operations: Blocked if non-compliant (violations shown above)"
     echo "• All violations indicate blocked operations"
+    echo ""
+    echo "📋 Current Non-Compliant Deployments in Strict Mode:"
+    kubectl get deployments -n opa-strict-demo -o custom-columns="NAME:.metadata.name,ASSET_UUID:.metadata.labels.assetUuid,COMPLIANT:.metadata.labels.assetUuid" | sed 's/<none>/❌ MISSING/g' | sed 's/asset-/✅ /g'
 fi
+
+echo ""
+echo "⚠️  Note about Warnings:"
+echo "========================"
+echo "In loose mode, UPDATE operations on non-compliant deployments are allowed"
+echo "but generate warnings. These warnings are typically logged in the webhook"
+echo "logs rather than stored in constraint status. To see them:"
+echo ""
+echo "kubectl logs -n gatekeeper-system -l control-plane=controller-manager | grep -i warn"
 
 echo ""
 echo "🔧 Commands for Further Investigation:"

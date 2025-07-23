@@ -1,36 +1,74 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: opa-exemptions
+  name: acme-finops-exemptions
   namespace: gatekeeper-system
   annotations:
-    description: "Centralized exemption management for OPA policies"
-    managed-by: "platform-team"
+    description: "ACME Payments Inc. - Centralized FinOps Exemption Management"
+    managed-by: "finops-team@acmepayments.com"
     last-updated: "2025-01-23"
+    policy-version: "v1.0"
 data:
   # Permanent exemptions - deployments that are permanently exempt from asset UUID requirements
-  # Format: "namespace/deployment-name": "reason for exemption"
+  # Format: JSON object with "namespace/deployment-name" as keys
   permanent_exemptions: |
     {
-      "monitoring/legacy-prometheus": "Legacy monitoring system - migration planned for Q2 2025",
-      "logging/fluentd-legacy": "Critical logging infrastructure - requires careful migration planning"
+      "monitoring/legacy-prometheus": {
+        "reason": "Legacy monitoring system - migration planned for Q2 2025",
+        "approved_by": "finops-team@acmepayments.com",
+        "approval_date": "2025-01-15",
+        "cost_impact": "medium",
+        "review_date": "2025-04-15",
+        "ticket": "FINOPS-1234"
+      },
+      "logging/fluentd-legacy": {
+        "reason": "Critical logging infrastructure - requires careful migration planning",
+        "approved_by": "platform-team@acmepayments.com",
+        "approval_date": "2025-01-15",
+        "cost_impact": "low",
+        "review_date": "2025-03-15",
+        "ticket": "PLAT-1235"
+      }
     }
-  
+
   # Time-based exemptions - deployments exempt until a specific date/time
-  # Format: "namespace/deployment-name": "RFC3339 timestamp"
+  # Format: JSON object with "namespace/deployment-name" as keys
   time_based_exemptions: |
     {
-      "development/test-app": "2025-02-15T10:00:00Z",
-      "staging/migration-app": "2025-01-31T23:59:59Z"
+      "development/test-app": {
+        "expires_at": "2025-02-15T10:00:00Z",
+        "reason": "Temporary exemption for testing new deployment pipeline",
+        "approved_by": "dev-team-lead@acmepayments.com",
+        "approval_date": "2025-01-20",
+        "cost_impact": "low",
+        "ticket": "DEV-5678"
+      },
+      "staging/migration-app": {
+        "expires_at": "2025-01-31T23:59:59Z",
+        "reason": "Migration testing in progress",
+        "approved_by": "migration-team@acmepayments.com",
+        "approval_date": "2025-01-22",
+        "cost_impact": "medium",
+        "ticket": "MIG-9999"
+      }
     }
-  
+
   # Existing deployments (loose mode only) - deployments that existed before policy enforcement
-  # Format: "namespace/deployment-name": "true"
+  # Format: JSON object with "namespace/deployment-name" as keys
   existing_deployments: |
     {
-      "default/nginx-existing-legacy": "true",
-      "production/legacy-api": "true",
-      "production/old-frontend": "true"
+      "acme-loose-demo/nginx-existing-legacy": {
+        "reason": "Pre-existing deployment before FinOps policy implementation",
+        "grandfathered_date": "2024-12-01",
+        "migration_deadline": "2025-06-01",
+        "cost_impact": "high"
+      },
+      "production/legacy-api": {
+        "reason": "Critical payment processing API - requires coordinated migration",
+        "grandfathered_date": "2024-12-01",
+        "migration_deadline": "2025-08-01",
+        "cost_impact": "critical"
+      }
     }
   
   # Metadata about exemptions for auditing and tracking

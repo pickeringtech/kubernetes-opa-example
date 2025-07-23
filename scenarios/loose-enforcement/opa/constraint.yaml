@@ -1,9 +1,12 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: AssetUuidRequired
+kind: AssetUuidRequiredLoose
 metadata:
   name: deployment-asset-uuid-loose
   annotations:
-    description: "Loose enforcement: requires assetUuid on new deployments only"
+    description: "ACME Payments Inc. FinOps - Loose Enforcement: Asset UUID required for new deployments"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    enforcement-level: "loose"
 spec:
   enforcementAction: warn  # Start with warn, can be changed to deny
   parameters:
@@ -15,14 +18,18 @@ spec:
       - "kube-node-lease"
       - "gatekeeper-system"
     exemptionConfigMap:
-      name: "opa-exemptions"
+      name: "acme-finops-exemptions"
       namespace: "gatekeeper-system"
   match:
     kinds:
       - apiGroups: ["apps"]
         kinds: ["Deployment"]
+    namespaces:
+      - "acme-loose-demo"
+      - "monitoring"
+      - "development"
     excludedNamespaces:
       - "kube-system"
-      - "kube-public" 
+      - "kube-public"
       - "kube-node-lease"
       - "gatekeeper-system"

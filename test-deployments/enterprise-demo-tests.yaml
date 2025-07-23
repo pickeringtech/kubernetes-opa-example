@@ -1,0 +1,105 @@
+# Test deployment that should be exempted via centralized ConfigMap
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-existing-legacy
+  namespace: acme-loose-demo
+  labels:
+    app: nginx-existing-legacy
+    # Note: Missing assetUuid label, but exempted via centralized ConfigMap
+  annotations:
+    description: "Legacy deployment exempted via centralized ACME FinOps configuration"
+    finops-status: "existing-deployment-exemption"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-existing-legacy
+  template:
+    metadata:
+      labels:
+        app: nginx-existing-legacy
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+---
+# Test deployment that should trigger a violation
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: new-non-compliant-app
+  namespace: acme-loose-demo
+  labels:
+    app: new-non-compliant-app
+    # Note: Missing assetUuid label and NOT exempted
+  annotations:
+    description: "New deployment that should trigger FinOps policy violation"
+    finops-status: "non-compliant"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: new-non-compliant-app
+  template:
+    metadata:
+      labels:
+        app: new-non-compliant-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+---
+# Test deployment with proper assetUuid (should always work)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compliant-payment-app
+  namespace: acme-loose-demo
+  labels:
+    app: compliant-payment-app
+    assetUuid: "asset-acme-payment-12345"
+  annotations:
+    description: "Compliant ACME Payments deployment with proper asset UUID"
+    finops-status: "compliant"
+    cost-center: "payments-processing"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compliant-payment-app
+  template:
+    metadata:
+      labels:
+        app: compliant-payment-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"

@@ -1,14 +1,17 @@
 apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
-  name: assetuuidrequired
+  name: assetuuidrequiredstrict
   annotations:
-    description: "Requires deployments to have an assetUuid label with exclusion support"
+    description: "ACME Payments Inc. FinOps Compliance - Asset UUID Requirement for Cost Optimization"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    cost-impact: "high"
 spec:
   crd:
     spec:
       names:
-        kind: AssetUuidRequired
+        kind: AssetUuidRequiredStrict
       validation:
         openAPIV3Schema:
           type: object
@@ -25,6 +28,19 @@ spec:
               items:
                 type: string
               description: "Namespaces to exempt from this policy"
+            exemptionS3Config:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                  description: "S3 endpoint URL for exemption data"
+                bucket:
+                  type: string
+                  description: "S3 bucket containing exemption data"
+                key:
+                  type: string
+                  description: "S3 key path to exemption JSON file"
+              description: "S3 configuration for centralized exemption management"
             exemptionConfigMap:
               type: object
               properties:
@@ -56,7 +72,7 @@ spec:
           # Check if assetUuid label is missing
           not has_asset_uuid
 
-          msg := sprintf("Deployment '%s' in namespace '%s' must have an 'assetUuid' label", [
+          msg := sprintf("🏦 ACME Payments Inc. FinOps Policy Violation - STRICT ENFORCEMENT\n\n📋 VIOLATION DETAILS:\nDeployment: %s\nNamespace: %s\n\n❌ CRITICAL COMPLIANCE ISSUE:\nMissing required 'assetUuid' label for cost tracking and optimization.\n\n🚨 DEPLOYMENT BLOCKED:\nThis deployment has been DENIED due to strict FinOps compliance requirements.\n\n📊 BUSINESS IMPACT:\n• Cost center allocation impossible\n• Resource optimization tracking disabled\n• Non-compliance with ACME Payments financial governance\n• Potential audit findings and regulatory issues\n\n🔧 IMMEDIATE ACTION REQUIRED:\nAdd an 'assetUuid' label with a valid asset identifier to enable:\n• Cost center allocation and chargeback\n• Resource optimization tracking\n• Compliance with payment industry standards\n• Audit trail for financial reporting\n\n📞 URGENT SUPPORT:\nContact: finops-team@acmepayments.com\nEscalation: finops-director@acmepayments.com\nDocumentation: https://wiki.acmepayments.com/finops/asset-tagging\nEmergency Ticket: https://jira.acmepayments.com/finops/emergency", [
             input.review.object.metadata.name,
             input.review.object.metadata.namespace
           ])
@@ -67,21 +83,39 @@ spec:
           input.parameters.exemptNamespaces[_] == input.review.object.metadata.namespace
         }
 
-        # Check if resource is centrally exempted
+        # Check if resource is centrally exempted via S3
         is_centrally_exempted {
+          # Fetch exemption data from S3
+          s3_url := sprintf("%s/%s/%s", [input.parameters.exemptionS3Config.endpoint, input.parameters.exemptionS3Config.bucket, input.parameters.exemptionS3Config.key])
+          response := http.send({
+            "method": "GET",
+            "url": s3_url,
+            "headers": {"Accept": "application/json"}
+          })
+          response.status_code == 200
+          exemption_data := json.unmarshal(response.body)
+
           # Check for permanent exemptions
-          exemption_data := data.inventory.cluster["v1"]["ConfigMap"][input.parameters.exemptionConfigMap.namespace][input.parameters.exemptionConfigMap.name].data
           deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
           exemption_data.permanent_exemptions[deployment_key]
         }
 
         is_centrally_exempted {
+          # Fetch exemption data from S3 for time-based exemptions
+          s3_url := sprintf("%s/%s/%s", [input.parameters.exemptionS3Config.endpoint, input.parameters.exemptionS3Config.bucket, input.parameters.exemptionS3Config.key])
+          response := http.send({
+            "method": "GET",
+            "url": s3_url,
+            "headers": {"Accept": "application/json"}
+          })
+          response.status_code == 200
+          exemption_data := json.unmarshal(response.body)
+
           # Check for time-based exemptions
-          exemption_data := data.inventory.cluster["v1"]["ConfigMap"][input.parameters.exemptionConfigMap.namespace][input.parameters.exemptionConfigMap.name].data
           deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
-          exclude_until := exemption_data.time_based_exemptions[deployment_key]
-          exclude_until != ""
-          time.parse_rfc3339_ns(exclude_until) > time.now_ns()
+          time_exemption := exemption_data.time_based_exemptions[deployment_key]
+          time_exemption.expires_at != ""
+          time.parse_rfc3339_ns(time_exemption.expires_at) > time.now_ns()
         }
 
         # Determine if we should enforce based on mode

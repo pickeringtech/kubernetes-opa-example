@@ -1,9 +1,12 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: AssetUuidRequired
+kind: AssetUuidRequiredStrict
 metadata:
   name: deployment-asset-uuid-strict
   annotations:
-    description: "Strict enforcement: requires assetUuid on ALL deployments"
+    description: "ACME Payments Inc. FinOps - Strict Enforcement: Asset UUID required for ALL deployments"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    enforcement-level: "strict"
 spec:
   enforcementAction: deny  # Strict mode uses deny by default
   parameters:
@@ -14,12 +17,18 @@ spec:
       - "kube-public"
       - "kube-node-lease"
       - "gatekeeper-system"
+    exemptionS3Config:
+      endpoint: "http://minio-api.minio-system.svc.cluster.local:9000"
+      bucket: "acme-finops-exemptions"
+      key: "strict-enforcement/exemptions.json"
   match:
     kinds:
       - apiGroups: ["apps"]
         kinds: ["Deployment"]
+    namespaces:
+      - "acme-strict-demo"
     excludedNamespaces:
       - "kube-system"
-      - "kube-public" 
+      - "kube-public"
       - "kube-node-lease"
       - "gatekeeper-system"

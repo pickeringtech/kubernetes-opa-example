@@ -1,23 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-excluded-app
+  name: legacy-prometheus
+  namespace: monitoring
   labels:
-    app: test-excluded-app
-    # Note: Missing assetUuid label, but excluded via annotation
+    app: legacy-prometheus
+    # Note: Missing assetUuid label, but exempted via S3 configuration
   annotations:
-    description: "Test deployment excluded from asset UUID policy"
-    opa.example.com/exclude: "true"
-    justification: "Testing exclusion mechanism for emergency deployments"
+    description: "Legacy monitoring system exempted via centralized S3 configuration"
+    finops-status: "permanent-exemption"
+    migration-planned: "Q2-2025"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: test-excluded-app
+      app: legacy-prometheus
   template:
     metadata:
       labels:
-        app: test-excluded-app
+        app: legacy-prometheus
     spec:
       containers:
       - name: nginx
@@ -35,23 +36,24 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: test-time-excluded-app
+  name: test-app
+  namespace: development
   labels:
-    app: test-time-excluded-app
-    # Note: Missing assetUuid label, but excluded via time-based annotation
+    app: test-app
+    # Note: Missing assetUuid label, but exempted via time-based S3 configuration
   annotations:
-    description: "Test deployment with time-based exclusion from asset UUID policy"
-    opa.example.com/exclude-until: "2025-12-31T23:59:59Z"
-    justification: "Testing time-based exclusion for maintenance window"
+    description: "Test deployment with time-based exemption via centralized S3 configuration"
+    finops-status: "time-based-exemption"
+    exemption-expires: "2025-02-15T10:00:00Z"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: test-time-excluded-app
+      app: test-app
   template:
     metadata:
       labels:
-        app: test-time-excluded-app
+        app: test-app
     spec:
       containers:
       - name: nginx

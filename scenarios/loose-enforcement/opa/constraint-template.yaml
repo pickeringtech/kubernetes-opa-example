@@ -1,14 +1,17 @@
 apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
-  name: assetuuidrequired
+  name: assetuuidrequiredloose
   annotations:
-    description: "Requires deployments to have an assetUuid label with exclusion support"
+    description: "ACME Payments Inc. FinOps Compliance - Asset UUID Requirement for Cost Optimization"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    cost-impact: "high"
 spec:
   crd:
     spec:
       names:
-        kind: AssetUuidRequired
+        kind: AssetUuidRequiredLoose
       validation:
         openAPIV3Schema:
           type: object
@@ -56,7 +59,7 @@ spec:
           # Check if assetUuid label is missing
           not has_asset_uuid
 
-          msg := sprintf("Deployment '%s' in namespace '%s' must have an 'assetUuid' label", [
+          msg := sprintf("🏦 ACME Payments Inc. FinOps Policy Violation\n\n📋 VIOLATION DETAILS:\nDeployment: %s\nNamespace: %s\n\n❌ COMPLIANCE ISSUE:\nMissing required 'assetUuid' label for cost tracking and optimization.\n\n📊 BUSINESS IMPACT:\nThis deployment cannot be properly tracked for cost allocation, chargeback, and FinOps optimization initiatives.\n\n🔧 REQUIRED ACTION:\nAdd an 'assetUuid' label with a valid asset identifier to enable:\n• Cost center allocation\n• Resource optimization tracking\n• Compliance with ACME Payments financial governance\n\n📞 SUPPORT:\nContact: finops-team@acmepayments.com\nDocumentation: https://wiki.acmepayments.com/finops/asset-tagging\nTicket System: https://jira.acmepayments.com/finops", [
             input.review.object.metadata.name,
             input.review.object.metadata.namespace
           ])
@@ -67,21 +70,23 @@ spec:
           input.parameters.exemptNamespaces[_] == input.review.object.metadata.namespace
         }
 
-        # Check if resource is centrally exempted
+        # Check if resource is centrally exempted via ConfigMap
         is_centrally_exempted {
           # Check for permanent exemptions
           exemption_data := data.inventory.cluster["v1"]["ConfigMap"][input.parameters.exemptionConfigMap.namespace][input.parameters.exemptionConfigMap.name].data
           deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
-          exemption_data.permanent_exemptions[deployment_key]
+          permanent_exemptions := json.unmarshal(exemption_data.permanent_exemptions)
+          permanent_exemptions[deployment_key]
         }
 
         is_centrally_exempted {
           # Check for time-based exemptions
           exemption_data := data.inventory.cluster["v1"]["ConfigMap"][input.parameters.exemptionConfigMap.namespace][input.parameters.exemptionConfigMap.name].data
           deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
-          exclude_until := exemption_data.time_based_exemptions[deployment_key]
-          exclude_until != ""
-          time.parse_rfc3339_ns(exclude_until) > time.now_ns()
+          time_exemptions := json.unmarshal(exemption_data.time_based_exemptions)
+          time_exemption := time_exemptions[deployment_key]
+          time_exemption.expires_at != ""
+          time.parse_rfc3339_ns(time_exemption.expires_at) > time.now_ns()
         }
 
         is_centrally_exempted {
@@ -89,7 +94,8 @@ spec:
           input.parameters.enforcementMode == "loose"
           exemption_data := data.inventory.cluster["v1"]["ConfigMap"][input.parameters.exemptionConfigMap.namespace][input.parameters.exemptionConfigMap.name].data
           deployment_key := sprintf("%s/%s", [input.review.object.metadata.namespace, input.review.object.metadata.name])
-          exemption_data.existing_deployments[deployment_key] == "true"
+          existing_deployments := json.unmarshal(exemption_data.existing_deployments)
+          existing_deployments[deployment_key]
         }
 
         # Determine if we should enforce based on mode

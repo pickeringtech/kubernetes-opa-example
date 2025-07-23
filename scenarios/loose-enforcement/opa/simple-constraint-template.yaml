@@ -1,0 +1,74 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: assetuuidrequiredsimple
+  annotations:
+    description: "ACME Payments Inc. FinOps Compliance - Simple Asset UUID Requirement"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    cost-impact: "high"
+spec:
+  crd:
+    spec:
+      names:
+        kind: AssetUuidRequiredSimple
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            enforcementMode:
+              type: string
+              enum: ["loose", "strict"]
+              description: "Enforcement mode: loose (new only) or strict (all)"
+            exemptNamespaces:
+              type: array
+              items:
+                type: string
+              description: "Namespaces to exempt from this policy"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package assetuuidrequiredsimple
+
+        violation[{"msg": msg}] {
+          # Only apply to Deployment resources
+          input.review.kind.kind == "Deployment"
+
+          # Check if namespace is exempt
+          not is_exempt_namespace
+
+          # Check if assetUuid label is missing
+          not has_asset_uuid
+
+          # In loose mode, only block NEW deployments, allow updates to existing ones
+          should_enforce
+
+          msg := sprintf("🏦 ACME Payments Inc. FinOps Policy Violation\n\n📋 VIOLATION DETAILS:\nDeployment: %s\nNamespace: %s\n\n❌ COMPLIANCE ISSUE:\nMissing required 'assetUuid' label for cost tracking and optimization.\n\n📊 BUSINESS IMPACT:\nThis deployment cannot be properly tracked for cost allocation, chargeback, and FinOps optimization initiatives.\n\n🔧 REQUIRED ACTION:\nAdd an 'assetUuid' label with a valid asset identifier to enable:\n• Cost center allocation\n• Resource optimization tracking\n• Compliance with ACME Payments financial governance\n\n📞 SUPPORT:\nContact: finops-team@acmepayments.com\nDocumentation: https://wiki.acmepayments.com/finops/asset-tagging\nTicket System: https://jira.acmepayments.com/finops", [
+            input.review.object.metadata.name,
+            input.review.object.metadata.namespace
+          ])
+        }
+
+        # Determine when to enforce the policy
+        should_enforce {
+          input.parameters.enforcementMode == "strict"
+          # In strict mode, enforce on both CREATE and UPDATE operations
+        }
+
+        should_enforce {
+          input.parameters.enforcementMode == "loose"
+          # In loose mode, only enforce on CREATE operations (new deployments)
+          input.review.operation == "CREATE"
+        }
+
+        # Check if namespace is exempt
+        is_exempt_namespace {
+          input.parameters.exemptNamespaces[_] == input.review.object.metadata.namespace
+        }
+
+        # Check if assetUuid label exists and is not empty
+        has_asset_uuid {
+          asset_uuid := input.review.object.metadata.labels.assetUuid
+          asset_uuid != ""
+          count(asset_uuid) > 0
+        }

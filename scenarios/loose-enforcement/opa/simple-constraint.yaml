@@ -1,0 +1,30 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: AssetUuidRequiredSimple
+metadata:
+  name: deployment-asset-uuid-simple
+  annotations:
+    description: "ACME Payments Inc. FinOps - Simple Asset UUID enforcement for testing"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    enforcement-level: "loose"
+spec:
+  enforcementAction: deny  # Block non-compliant deployments
+  parameters:
+    enforcementMode: "loose"
+    exemptNamespaces:
+      - "kube-system"
+      - "kube-public"
+      - "kube-node-lease"
+      - "gatekeeper-system"
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    namespaces:
+      - "opa-loose-demo"
+      - "acme-loose-demo"
+    excludedNamespaces:
+      - "kube-system"
+      - "kube-public" 
+      - "kube-node-lease"
+      - "gatekeeper-system"

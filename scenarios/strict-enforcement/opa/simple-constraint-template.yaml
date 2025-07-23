@@ -1,0 +1,74 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: assetuuidrequiredstrictsimple
+  annotations:
+    description: "ACME Payments Inc. FinOps Compliance - Strict Asset UUID Requirement"
+    organization: "ACME Payments Inc."
+    policy-category: "finops-compliance"
+    cost-impact: "high"
+spec:
+  crd:
+    spec:
+      names:
+        kind: AssetUuidRequiredStrictSimple
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            enforcementMode:
+              type: string
+              enum: ["loose", "strict"]
+              description: "Enforcement mode: loose (new only) or strict (all)"
+            exemptNamespaces:
+              type: array
+              items:
+                type: string
+              description: "Namespaces to exempt from this policy"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package assetuuidrequiredstrictsimple
+
+        violation[{"msg": msg}] {
+          # Only apply to Deployment resources
+          input.review.kind.kind == "Deployment"
+          
+          # Check if namespace is exempt
+          not is_exempt_namespace
+          
+          # Check if assetUuid label is missing
+          not has_asset_uuid
+          
+          # In strict mode, enforce on both CREATE and UPDATE operations
+          should_enforce
+          
+          msg := sprintf("🏦 ACME Payments Inc. FinOps Policy Violation - STRICT ENFORCEMENT\n\n📋 VIOLATION DETAILS:\nDeployment: %s\nNamespace: %s\n\n❌ CRITICAL COMPLIANCE ISSUE:\nMissing required 'assetUuid' label for cost tracking and optimization.\n\n🚨 DEPLOYMENT BLOCKED:\nThis deployment has been DENIED due to strict FinOps compliance requirements.\n\n📊 BUSINESS IMPACT:\n• Cost center allocation impossible\n• Resource optimization tracking disabled\n• Non-compliance with ACME Payments financial governance\n• Potential audit findings and regulatory issues\n\n🔧 IMMEDIATE ACTION REQUIRED:\nAdd an 'assetUuid' label with a valid asset identifier to enable:\n• Cost center allocation and chargeback\n• Resource optimization tracking\n• Compliance with payment industry standards\n• Audit trail for financial reporting\n\n📞 URGENT SUPPORT:\nContact: finops-team@acmepayments.com\nEscalation: finops-director@acmepayments.com\nDocumentation: https://wiki.acmepayments.com/finops/asset-tagging\nEmergency Ticket: https://jira.acmepayments.com/finops/emergency", [
+            input.review.object.metadata.name,
+            input.review.object.metadata.namespace
+          ])
+        }
+
+        # Determine when to enforce the policy
+        should_enforce {
+          input.parameters.enforcementMode == "strict"
+          # In strict mode, enforce on both CREATE and UPDATE operations
+        }
+
+        should_enforce {
+          input.parameters.enforcementMode == "loose"
+          # In loose mode, only enforce on CREATE operations (new deployments)
+          input.review.operation == "CREATE"
+        }
+
+        # Check if namespace is exempt
+        is_exempt_namespace {
+          input.parameters.exemptNamespaces[_] == input.review.object.metadata.namespace
+        }
+
+        # Check if assetUuid label exists and is not empty
+        has_asset_uuid {
+          asset_uuid := input.review.object.metadata.labels.assetUuid
+          asset_uuid != ""
+          count(asset_uuid) > 0
+        }

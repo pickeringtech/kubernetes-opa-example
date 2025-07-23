@@ -72,7 +72,7 @@ else
 fi
 echo ""
 echo "🧪 Test the policy:"
-echo "  • Try deploying without assetUuid: kubectl apply -f test-deployments/non-compliant.yaml"
+echo "  • Try deploying without assetUuid: kubectl apply -f test-deployments/non-compliant-deployment.yaml"
 echo "  • Check constraint status: kubectl get assetuuidrequired -A"
 echo ""
 echo "📚 View logs:"

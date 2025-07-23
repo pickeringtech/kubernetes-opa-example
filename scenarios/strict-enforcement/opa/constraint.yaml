@@ -1,0 +1,25 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: AssetUuidRequired
+metadata:
+  name: deployment-asset-uuid-strict
+  annotations:
+    description: "Strict enforcement: requires assetUuid on ALL deployments"
+spec:
+  enforcementAction: deny  # Strict mode uses deny by default
+  parameters:
+    enforcementMode: "strict"
+    excludeExisting: false
+    exemptNamespaces:
+      - "kube-system"
+      - "kube-public"
+      - "kube-node-lease"
+      - "gatekeeper-system"
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    excludedNamespaces:
+      - "kube-system"
+      - "kube-public" 
+      - "kube-node-lease"
+      - "gatekeeper-system"

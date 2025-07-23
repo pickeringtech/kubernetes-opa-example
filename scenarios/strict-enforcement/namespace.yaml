@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: opa-strict-demo
+  labels:
+    scenario: strict-enforcement
+  annotations:
+    description: "Namespace for strict enforcement OPA demo"

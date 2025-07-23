@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-content
+  labels:
+    app: nginx-demo
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>OPA Strict Enforcement Demo</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f5f5;
+            }
+            .container {
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .header {
+                background-color: #dc3545;
+                color: white;
+                padding: 20px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            .error {
+                background-color: #f8d7da;
+                border: 1px solid #f5c6cb;
+                color: #721c24;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 15px 0;
+            }
+            .success {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 15px 0;
+            }
+            .code {
+                background-color: #f8f9fa;
+                border: 1px solid #e9ecef;
+                padding: 15px;
+                border-radius: 5px;
+                font-family: monospace;
+                margin: 15px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🔒 OPA Strict Enforcement Scenario</h1>
+                <p>Zero-Tolerance Asset UUID Requirements</p>
+            </div>
+            
+            <h2>Scenario Overview</h2>
+            <p>This scenario demonstrates <strong>strict enforcement</strong> of asset UUID requirements in a clean Kubernetes environment.</p>
+            
+            <div class="error">
+                <strong>Policy:</strong> ALL deployments must have an <code>assetUuid</code> label. No exceptions for existing deployments.
+            </div>
+            
+            <h2>Key Features</h2>
+            <ul>
+                <li>🚫 No deployments allowed without <code>assetUuid</code> label</li>
+                <li>⚡ Immediate enforcement on all resources</li>
+                <li>🕒 Time-based exclusions still supported (for maintenance)</li>
+                <li>🏷️ Manual exclusions available (for emergencies)</li>
+            </ul>
+            
+            <h2>Limited Exclusion Methods</h2>
+            
+            <h3>1. Emergency Exclusion (Use Sparingly)</h3>
+            <div class="code">
+    metadata:
+      annotations:
+        opa.example.com/exclude: "true"
+            </div>
+
+            <h3>2. Maintenance Window</h3>
+            <div class="code">
+    metadata:
+      annotations:
+        opa.example.com/exclude-until: "2024-01-15T10:00:00Z"
+            </div>
+
+            <h2>Required Deployment Format</h2>
+            <div class="code">
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: compliant-app
+      labels:
+        assetUuid: "asset-12345-abcde"  # REQUIRED!
+    spec:
+      # ... deployment spec
+            </div>
+            
+            <h2>What Happens Without assetUuid?</h2>
+            <div class="error">
+                <strong>Result:</strong> Deployment will be REJECTED by the admission controller.
+                <br><strong>Error:</strong> "Deployment 'app-name' in namespace 'default' must have an 'assetUuid' label"
+            </div>
+            
+            <div class="success">
+                <strong>Status:</strong> This NGINX deployment is compliant and demonstrates strict enforcement!
+            </div>
+        </div>
+    </body>
+    </html>

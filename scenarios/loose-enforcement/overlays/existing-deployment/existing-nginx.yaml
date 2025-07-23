@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-existing-legacy
+  labels:
+    app: nginx-legacy
+    scenario: loose-enforcement
+    # Note: No assetUuid label - this represents an existing deployment
+  annotations:
+    description: "Legacy NGINX deployment without assetUuid - should be allowed in loose mode"
+    opa.example.com/existing: "true"  # Mark as existing deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-legacy
+      scenario: loose-enforcement
+  template:
+    metadata:
+      labels:
+        app: nginx-legacy
+        scenario: loose-enforcement
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.20-alpine  # Older version to simulate legacy
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-existing-legacy
+  labels:
+    app: nginx-legacy
+    scenario: loose-enforcement
+  annotations:
+    description: "Service for legacy NGINX deployment"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: nginx-legacy
+    scenario: loose-enforcement

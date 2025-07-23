@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: loose-enforcement-scenario
+
+namespace: opa-loose-demo
+
+resources:
+  - namespace.yaml
+  - base/
+  - opa/
+  - overlays/existing-deployment/
+
+labels:
+  - pairs:
+      scenario: loose-enforcement
+      managed-by: kustomize
+
+commonAnnotations:
+  description: "Complete loose enforcement scenario with OPA Gatekeeper"
+  scenario.opa.example.com/type: "loose"

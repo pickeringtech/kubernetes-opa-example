@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-excluded-app
+  labels:
+    app: test-excluded-app
+    # Note: Missing assetUuid label, but excluded via annotation
+  annotations:
+    description: "Test deployment excluded from asset UUID policy"
+    opa.example.com/exclude: "true"
+    justification: "Testing exclusion mechanism for emergency deployments"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-excluded-app
+  template:
+    metadata:
+      labels:
+        app: test-excluded-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-time-excluded-app
+  labels:
+    app: test-time-excluded-app
+    # Note: Missing assetUuid label, but excluded via time-based annotation
+  annotations:
+    description: "Test deployment with time-based exclusion from asset UUID policy"
+    opa.example.com/exclude-until: "2025-12-31T23:59:59Z"
+    justification: "Testing time-based exclusion for maintenance window"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-time-excluded-app
+  template:
+    metadata:
+      labels:
+        app: test-time-excluded-app
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"

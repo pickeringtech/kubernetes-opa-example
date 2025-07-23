@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-content
+  labels:
+    app: nginx-demo
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>OPA Loose Enforcement Demo</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f5f5f5;
+            }
+            .container {
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .header {
+                background-color: #4CAF50;
+                color: white;
+                padding: 20px;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            .warning {
+                background-color: #fff3cd;
+                border: 1px solid #ffeaa7;
+                color: #856404;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 15px 0;
+            }
+            .success {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 15px 0;
+            }
+            .code {
+                background-color: #f8f9fa;
+                border: 1px solid #e9ecef;
+                padding: 15px;
+                border-radius: 5px;
+                font-family: monospace;
+                margin: 15px 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🛡️ OPA Loose Enforcement Scenario</h1>
+                <p>Gradual Migration with Asset UUID Requirements</p>
+            </div>
+            
+            <h2>Scenario Overview</h2>
+            <p>This scenario demonstrates <strong>loose enforcement</strong> of asset UUID requirements in a Kubernetes cluster with existing deployments.</p>
+            
+            <div class="warning">
+                <strong>Policy:</strong> Only NEW deployments require an <code>assetUuid</code> label. Existing deployments are exempt.
+            </div>
+            
+            <h2>Key Features</h2>
+            <ul>
+                <li>✅ Existing deployments without <code>assetUuid</code> are allowed</li>
+                <li>⚠️ New deployments must include <code>assetUuid</code> label</li>
+                <li>🕒 Time-based exclusions supported</li>
+                <li>🏷️ Annotation-based exclusions available</li>
+            </ul>
+            
+            <h2>Exclusion Methods</h2>
+            
+            <h3>1. Existing Deployment Annotation</h3>
+            <div class="code">
+    metadata:
+      annotations:
+        opa.example.com/existing: "true"
+            </div>
+
+            <h3>2. Manual Exclusion</h3>
+            <div class="code">
+    metadata:
+      annotations:
+        opa.example.com/exclude: "true"
+            </div>
+
+            <h3>3. Time-based Exclusion</h3>
+            <div class="code">
+    metadata:
+      annotations:
+        opa.example.com/exclude-until: "2024-12-31T23:59:59Z"
+            </div>
+
+            <h2>Compliant Deployment Example</h2>
+            <div class="code">
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: compliant-app
+      labels:
+        assetUuid: "asset-12345-abcde"
+    spec:
+      # ... deployment spec
+            </div>
+            
+            <div class="success">
+                <strong>Status:</strong> This NGINX deployment demonstrates the loose enforcement scenario in action!
+            </div>
+        </div>
+    </body>
+    </html>

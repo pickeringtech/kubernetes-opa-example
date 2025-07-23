@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-loose-demo
+  labels:
+    app: nginx-demo
+    scenario: loose-enforcement
+  annotations:
+    description: "Service for NGINX loose enforcement demo"
+spec:
+  type: NodePort
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: nginx-demo
+    scenario: loose-enforcement
